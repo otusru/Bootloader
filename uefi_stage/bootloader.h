@@ -8,6 +8,12 @@
 #define MAX_CMDLINE_LENGTH 256
 
 typedef struct {
+    CHAR8 cmdline[MAX_CMDLINE_LENGTH];
+    EFI_PHYSICAL_ADDRESS initrd_addr;
+    UINTN initrd_size;
+} BootInfo;
+
+typedef struct {
     CHAR16* path;
     CHAR16* cmdline;
 } KernelEntry;
