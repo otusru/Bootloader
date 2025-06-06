@@ -4,6 +4,7 @@
 
 #include <efi.h>
 #include <efilib.h>
+#include <efi_protocols.h>
 #include "bootloader.h"
 
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
