@@ -67,6 +67,17 @@ EFI_STATUS LoadKernel(CHAR16* path) {
 
 EFI_STATUS StartKernel(CHAR16* cmdline) {
     // Реализация запуска ядра
+    typedef void (*KernelEntry)(void);
+
+    KernelEntry entry_point = (KernelEntry)0x100000; // Предположим, адрес точки входа
+
+    Print(L"Перед запуском ядра Otus OS...\n");
+    Print(L"Командная строка: %s\n", cmdline);
+
+    gBS->ExitBootServices(gImageHandle, 0);
+
+    entry_point(); // Передача управления ядру
+
     return EFI_SUCCESS;
 }
 
