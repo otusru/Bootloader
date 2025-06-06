@@ -119,13 +119,3 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_tab
 
     return EFI_SUCCESS;
 }
-
-EFI_STATUS ShowMenu(KernelEntry* kernels, UINTN kernel_count, UINTN* selection) {
-    // Реализация отображения меню
-    return EFI_SUCCESS;
-}
-
-EFI_STATUS ShowTimer(UINTN seconds) {
-    // Реализация отображения таймера
-    return EFI_SUCCESS;
-}
