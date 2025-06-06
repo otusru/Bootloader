@@ -1,34 +1,33 @@
-; Этап 1: Загрузочный сектор для BIOS
-; stage1.asm — Этап 1: Загрузочный сектор для BIOS
-; Решение: загрузить второй этап загрузчика из следующих секторов
+; bootloader.asm — Загрузочный сектор BIOS: Stage1
+; Решение: вывести сообщение и загрузить Stage2 (4 сектора, начиная с 2)
 
-BITS 16
-ORG 0x7C00
+[BITS 16]
+[ORG 0x7C00]
 
 start:
-    cli                 ; Отключаем прерывания
+    cli
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x7C00      ; Настраиваем стек
+    mov sp, 0x7C00
 
-    ; Выводим сообщение
-    mov si, message
+    ; Показать сообщение
+    mov si, msg
     call print_string
 
-    ; Загружаем 4 сектора начиная с сектора 2 (Stage 2)
-    mov ah, 0x02        ; Функция BIOS — читать сектора
-    mov al, 4           ; Количество секторов
+    ; Загрузить 4 сектора начиная с сектора 2 (Stage2)
+    mov ah, 0x02        ; BIOS: читать секторы
+    mov al, 4           ; кол-во секторов
     mov ch, 0
-    mov cl, 2           ; Сектор 2
+    mov cl, 2           ; сектор 2
     mov dh, 0
-    mov dl, 0x80        ; Жёсткий диск
-    mov bx, 0x0600      ; Адрес в памяти (0x0000:0x0600)
+    mov dl, 0x80        ; жёсткий диск
+    mov bx, 0x0600      ; адрес в памяти
     int 0x13
     jc disk_error
 
-    ; Переход к загруженному второму этапу
+    ; Переход к загруженному Stage2
     jmp 0x0000:0x0600
 
 disk_error:
@@ -38,17 +37,17 @@ disk_error:
 
 print_string:
     mov ah, 0x0E
-.next:
+.print_char:
     lodsb
-    cmp al, 0
-    je .done
+    test al, al
+    jz .done
     int 0x10
-    jmp .next
+    jmp .print_char
 .done:
     ret
 
-message db "Загрузка второго этапа...", 0
-error   db "Ошибка чтения диска!", 0
+msg   db "Загрузка Otus OS Stage2...", 0
+error db "Ошибка чтения Stage2!", 0
 
 times 510 - ($ - $$) db 0
-dw 0xAA55  ; Сигнатура загрузочного сектора
+dw 0xAA55
