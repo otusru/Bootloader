@@ -1,3 +1,77 @@
+// uefi_stage/elf_loader.c
+// Загрузка ELF64-ядра Otus OS из файла
+
+#include "bootloader.h"
+
+#define PT_LOAD 1
+
+typedef struct {
+    UINT8  e_ident[16];
+    UINT16 e_type;
+    UINT16 e_machine;
+    UINT32 e_version;
+    UINT64 e_entry;
+    UINT64 e_phoff;
+    UINT64 e_shoff;
+    UINT32 e_flags;
+    UINT16 e_ehsize;
+    UINT16 e_phentsize;
+    UINT16 e_phnum;
+    UINT16 e_shentsize;
+    UINT16 e_shnum;
+    UINT16 e_shstrndx;
+} Elf64_Ehdr;
+
+typedef struct {
+    UINT32 p_type;
+    UINT32 p_flags;
+    UINT64 p_offset;
+    UINT64 p_vaddr;
+    UINT64 p_paddr;
+    UINT64 p_filesz;
+    UINT64 p_memsz;
+    UINT64 p_align;
+} Elf64_Phdr;
+
+VOID* load_elf64(EFI_FILE *file) {
+    Elf64_Ehdr header;
+    UINTN size = sizeof(header);
+
+    file->Read(file, &size, &header);
+
+    if (header.e_ident[0] != 0x7F || header.e_ident[1] != 'E') {
+        Print(L"Неверный ELF-заголовок\n");
+        return NULL;
+    }
+
+    file->SetPosition(file, header.e_phoff);
+
+    for (UINT16 i = 0; i < header.e_phnum; i++) {
+        Elf64_Phdr ph;
+        size = sizeof(ph);
+        file->Read(file, &size, &ph);
+
+        if (ph.p_type != PT_LOAD)
+            continue;
+
+        VOID *segment = (VOID*)(UINTN)ph.p_paddr;
+        UINTN segment_size = ph.p_filesz;
+
+        file->SetPosition(file, ph.p_offset);
+        file->Read(file, &segment_size, segment);
+
+        // Очищаем оставшуюся память
+        if (ph.p_memsz > ph.p_filesz) {
+            UINTN diff = ph.p_memsz - ph.p_filesz;
+            SetMem((UINT8*)segment + ph.p_filesz, diff, 0);
+        }
+    }
+
+    return (VOID*)(UINTN)header.e_entry;
+}
+
+
+/*
 // Загрузка ELF64
 
 #include <efi.h>
@@ -154,3 +228,4 @@ EFI_STATUS StartKernel(CHAR16* cmdline) {
 
     return EFI_SUCCESS;
 }
+*/
