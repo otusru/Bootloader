@@ -85,3 +85,40 @@ EFI_STATUS LoadInitrd(CHAR16* path) {
     // Реализация загрузки initrd
     return EFI_SUCCESS;
 }
+
+EFI_STATUS StartKernel(CHAR16* cmdline) {
+    // Выделяем память под структуру BootInfo
+    BootInfo* info;
+    EFI_PHYSICAL_ADDRESS addr;
+    EFI_STATUS status;
+
+    status = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &addr);
+    if (EFI_ERROR(status)) return status;
+
+    info = (BootInfo*)(UINTN)addr;
+
+    // Копируем cmdline
+    CHAR8 ascii_cmdline[MAX_CMDLINE_LENGTH];
+    UnicodeStrToAsciiStrS(cmdline, ascii_cmdline, MAX_CMDLINE_LENGTH);
+    AsciiStrCpyS(info->cmdline, MAX_CMDLINE_LENGTH, ascii_cmdline);
+
+    // Предположим, что initrd уже загружен по адресу:
+    info->initrd_addr = 0x800000; // Пример адреса
+    info->initrd_size = 0x100000; // Пример размера
+
+    // Адрес точки входа ядра
+    void (*kernel_entry)(BootInfo*) = (void (*)(BootInfo*))0x100000;
+
+    // Завершаем работу служб UEFI
+    UINTN mmap_size = 0, map_key, desc_size;
+    UINT32 desc_version;
+    gBS->GetMemoryMap(&mmap_size, NULL, &map_key, &desc_size, &desc_version);
+    void* mem_map = AllocatePool(mmap_size);
+    gBS->GetMemoryMap(&mmap_size, mem_map, &map_key, &desc_size, &desc_version);
+    gBS->ExitBootServices(gImageHandle, map_key);
+
+    // Передаём управление ядру
+    kernel_entry(info);
+
+    return EFI_SUCCESS;
+}
