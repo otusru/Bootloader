@@ -2,7 +2,7 @@
 
 ```bash
 
-cd os_bootloader_project/bios_stage
+cd bootloader/bios_stage
 make run
 
 ```
