@@ -1,3 +1,41 @@
+// uefi_stage/bootloader.h
+// Заголовочный файл: структуры, функции загрузки ядра и initrd
+
+#ifndef BOOTLOADER_H
+#define BOOTLOADER_H
+
+#include <efi.h>
+#include <efilib.h>
+
+// Структура BootInfo для передачи параметров ядру Otus OS
+typedef struct {
+    CHAR16 *cmdline;         // Командная строка ядра
+    VOID   *initrd_addr;     // Адрес initrd в памяти
+    UINTN   initrd_size;     // Размер initrd
+} BootInfo;
+
+// Тип для функции точки входа ядра
+typedef void (*KernelMainFunc)(BootInfo*);
+
+// Показывает меню выбора ОС и возвращает индекс выбранного пункта
+INTN show_menu(void);
+
+// Загружает ELF64-файл и возвращает точку входа
+VOID* load_elf64(EFI_FILE *file);
+
+// Загружает initrd по указанному пути
+VOID* load_initrd(CHAR16 *path, UINTN *size);
+
+// Открывает файл ядра по имени
+EFI_FILE* open_kernel_file(CHAR16 *name);
+
+// Загрузка Windows через chainload bootmgfw.efi
+EFI_STATUS chainload_windows_bootmgr(void);
+
+#endif
+
+
+/*
 #ifndef BOOTLOADER_H
 #define BOOTLOADER_H
 
@@ -57,3 +95,4 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, EFI_PHYSICAL_ADDRESS addr, UINTN si
 EFI_STATUS GetFileSize(EFI_FILE_PROTOCOL* file, UINTN* size);
 
 #endif // BOOTLOADER_H
+*/
