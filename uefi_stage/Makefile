@@ -1,6 +1,6 @@
 # Сборка UEFI
 TARGET = BOOTX64.EFI
-SRC = main.c elf_loader.c menu.c
+SRC = main.c elf_loader.c menu.c fs_utils.c
 OBJ = $(SRC:.c=.o)
 
 EFIINC = /usr/include/efi
