@@ -64,3 +64,13 @@ EFI_STATUS LoadKernel(CHAR16* path) {
 
     return EFI_SUCCESS;
 }
+
+EFI_STATUS StartKernel(CHAR16* cmdline) {
+    // Реализация запуска ядра
+    return EFI_SUCCESS;
+}
+
+EFI_STATUS LoadInitrd(CHAR16* path) {
+    // Реализация загрузки initrd
+    return EFI_SUCCESS;
+}
