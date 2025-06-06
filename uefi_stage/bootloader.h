@@ -7,6 +7,34 @@
 #define MAX_KERNELS 10
 #define MAX_CMDLINE_LENGTH 256
 
+#define MULTIBOOT2_BOOTLOADER_MAGIC 0x36d76289
+#define MULTIBOOT2_HEADER_MAGIC     0xE85250D6
+#define MULTIBOOT2_TAG_CMDLINE      1
+#define MULTIBOOT2_TAG_MODULE       3
+#define MULTIBOOT2_TAG_END          0
+
+typedef struct {
+    UINT32 type;
+    UINT32 size;
+} __attribute__((packed)) multiboot_tag;
+
+typedef struct {
+    multiboot_tag tag;
+    CHAR8 string[128];
+} __attribute__((packed)) multiboot_tag_cmdline;
+
+typedef struct {
+    multiboot_tag tag;
+    UINT32 mod_start;
+    UINT32 mod_end;
+    CHAR8  cmdline[128];
+} __attribute__((packed)) multiboot_tag_module;
+
+typedef struct {
+    multiboot_tag tag;
+} __attribute__((packed)) multiboot_tag_end;
+
+
 typedef struct {
     CHAR8 cmdline[MAX_CMDLINE_LENGTH];
     EFI_PHYSICAL_ADDRESS initrd_addr;
