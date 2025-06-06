@@ -14,6 +14,17 @@ typedef struct {
     UINTN   initrd_size;     // Размер initrd
 } BootInfo;
 
+typedef struct {
+    CHAR16 *title;
+    CHAR16 *kernel;
+    CHAR16 *cmdline;
+    CHAR16 *initrd;
+    CHAR16 *windows_chainload;
+} BootEntry;
+
+INTN boot_menu_auto_or_manual(void);
+BootEntry* get_boot_entry(INTN index);
+
 // Тип для функции точки входа ядра
 typedef void (*KernelMainFunc)(BootInfo*);
 
@@ -32,7 +43,7 @@ EFI_FILE* open_kernel_file(CHAR16 *name);
 // Загрузка Windows через chainload bootmgfw.efi
 EFI_STATUS chainload_windows_bootmgr(void);
 
-#endif
+#endif // BOOTLOADER_H
 
 
 /*
