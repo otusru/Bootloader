@@ -1,3 +1,67 @@
+// uefi_stage/main.c
+// Главный файл UEFI-загрузчика Otus OS с меню выбора систем
+// Использует UEFI SimpleTextInput/Output, загружает ядра по выбору
+
+#include <efi.h>
+#include <efilib.h>
+#include "bootloader.h"
+
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    InitializeLib(ImageHandle, SystemTable);
+
+    Print(L"\nДобро пожаловать в загрузчик Otus OS (UEFI)\n\n");
+
+    EFI_FILE *kernel_file = NULL;
+    CHAR16 *cmdline = NULL;
+    CHAR16 *initrd_path = NULL;
+
+    INTN choice = show_menu();
+
+    switch (choice) {
+        case 0:
+            Print(L"Вы выбрали Otus OS\n");
+            kernel_file = open_kernel_file(L"OtusOS.elf");
+            cmdline = L"root=/dev/sda1 quiet";
+            initrd_path = L"initrd.img";
+            break;
+
+        case 1:
+            Print(L"Вы выбрали Debian 12\n");
+            kernel_file = open_kernel_file(L"vmlinuz");
+            cmdline = L"root=/dev/sda2 ro quiet splash";
+            initrd_path = L"initrd-debian.img";
+            break;
+
+        case 2:
+            Print(L"Вы выбрали Windows 11\n");
+            Print(L"Запуск Windows 11 через UEFI chainload...\n");
+            return chainload_windows_bootmgr();
+    }
+
+    if (!kernel_file) {
+        Print(L"Ошибка: ядро не найдено\n");
+        return EFI_NOT_FOUND;
+    }
+
+    void *entry = load_elf64(kernel_file);
+    if (!entry) {
+        Print(L"Ошибка загрузки ELF\n");
+        return EFI_LOAD_ERROR;
+    }
+
+    BootInfo *bootinfo = AllocatePool(sizeof(BootInfo));
+    bootinfo->cmdline = cmdline;
+    bootinfo->initrd_addr = load_initrd(initrd_path, &bootinfo->initrd_size);
+
+    Print(L"Передача управления ядру...\n");
+    ((KernelMainFunc)entry)(bootinfo);  // kernel_main(BootInfo*)
+
+    return EFI_SUCCESS;
+}
+
+// ------------------------
+
+/*
 // Основной загрузчик
 // main.c — Главный файл UEFI-загрузчика
 // Решение: вывод строки, чтение boot.cfg, отображение меню
@@ -30,15 +94,6 @@ EFI_STATUS ReadBootConfig(EFI_FILE_PROTOCOL* root, KernelEntry* entry) {
         return status;
     }
 
-/*
-  Преобразуем строку в параметры
-  Предполагается, что файл имеет формат:
-  kernel_path
-  cmdline
-   
-  \EFI\OtusOS\kernel.elf
-  root=/dev/sda1
-*/
     buffer[size / sizeof(CHAR16)] = L'\0'; // Завершаем строку нулём
 
     // Разделяем строку на kernel_path и cmdline
@@ -162,3 +217,4 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_tab
 
     return EFI_SUCCESS;
 }
+*/
