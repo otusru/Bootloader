@@ -2,20 +2,6 @@
 // main.c — Главный файл UEFI-загрузчика
 // Решение: вывод строки, чтение boot.cfg, отображение меню
 
-/*
-EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
-    InitializeLib(image_handle, system_table);
-
-    Print(L"Добро пожаловать в UEFI-загрузчик!\n");
-
-    // TODO: Чтение boot.cfg
-    // TODO: Отображение меню выбора
-    // TODO: Загрузка ELF64 ядра
-
-    return EFI_SUCCESS;
-}
-*/
-
 #include <efi.h>
 #include <efilib.h>
 #include "bootloader.h"
@@ -44,7 +30,7 @@ EFI_STATUS ReadBootConfig(EFI_FILE_PROTOCOL* root, KernelEntry* entry) {
         return status;
     }
 
-/**
+/*
   Преобразуем строку в параметры
   Предполагается, что файл имеет формат:
   kernel_path
@@ -52,7 +38,6 @@ EFI_STATUS ReadBootConfig(EFI_FILE_PROTOCOL* root, KernelEntry* entry) {
    
   \EFI\OtusOS\kernel.elf
   root=/dev/sda1
-  
 */
     buffer[size / sizeof(CHAR16)] = L'\0'; // Завершаем строку нулём
 
@@ -69,20 +54,30 @@ EFI_STATUS ReadBootConfig(EFI_FILE_PROTOCOL* root, KernelEntry* entry) {
 }
 
 // Основная точка входа
-EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table) {
     EFI_STATUS status;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs;
     EFI_FILE_PROTOCOL* root;
+    KernelEntry kernels[MAX_KERNELS];
+    UINTN kernel_count = 0;
+    UINTN selection = 0;
 
     // Инициализация библиотеки
     InitializeLib(image_handle, system_table);
 
+    status = system_table->BootServices->HandleProtocol(image_handle, &FileSystemProtocol, (VOID**)&fs);
+    if (EFI_ERROR(status)) {
+        Print(L"Не удалось получить файловую систему\n");
+        return status;
+    }
+    
     // Получаем файловую систему
     status = system_table->BootServices->HandleProtocol(
         image_handle,
         &FileSystemProtocol,
         (VOID**)&fs
     );
+    
     if (EFI_ERROR(status)) {
         Print(L"Не удалось получить файловую систему\n");
         return status;
@@ -109,13 +104,52 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_tab
         Print(L"Ошибка загрузки ядра\n");
         return status;
     }
-
+    
     // Запускаем ядро
-    status = StartKernel(entry.cmdline);
+    status = StartKernel(kernels[selection].cmdline);
     if (EFI_ERROR(status)) {
         Print(L"Ошибка запуска ядра\n");
         return status;
     }
+   
+    status = fs->OpenVolume(fs, &root);
+    if (EFI_ERROR(status)) {
+        Print(L"Не удалось открыть корневой каталог\n");
+        return status;
+    }
+
+    status = ReadBootConfig(root, kernels, &kernel_count);
+    if (EFI_ERROR(status)) {
+        Print(L"Ошибка чтения конфигурации\n");
+        return status;
+    }
+
+    status = ShowMenu(kernels, kernel_count, &selection);
+    if (EFI_ERROR(status)) {
+        Print(L"Ошибка отображения меню\n");
+        return status;
+    }
+
+    status = LoadKernel(kernels[selection].path);
+    if (EFI_ERROR(status)) {
+        Print(L"Ошибка загрузки ядра\n");
+        return status;
+    }
+
+    status = LoadInitrd(L"\\EFI\\Otus\\initrd.img");
+    if (EFI_ERROR(status)) {
+        Print(L"Ошибка загрузки initrd\n");
+        return status;
+    }
+    
+    // Запускаем ядро
+    status = StartKernel(kernels[selection].cmdline);
+    if (EFI_ERROR(status)) {
+        Print(L"Ошибка запуска ядра\n");
+        return status;
+    }
+
+    Print(L"Добро пожаловать в UEFI-загрузчик!\n");
 
     return EFI_SUCCESS;
 }
