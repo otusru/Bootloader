@@ -17,3 +17,12 @@ EFI_STATUS ShowMenu() {
         status = gST->ConIn->ReadKeyStroke(gST
 ::contentReference[oaicite:0]{index=0}
  
+EFI_STATUS ShowMenu(KernelEntry* kernels, UINTN kernel_count, UINTN* selection) {
+    // Реализация отображения меню
+    return EFI_SUCCESS;
+}
+
+EFI_STATUS ShowTimer(UINTN seconds) {
+    // Реализация отображения таймера
+    return EFI_SUCCESS;
+}
