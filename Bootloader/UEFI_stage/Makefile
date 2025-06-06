@@ -1,37 +1,28 @@
-# Makefile для сборки UEFI-программы с использованием GNU-EFI
+EFI_TARGET = BOOTX64.EFI
+EFI_OUTPUT = $(EFI_TARGET)
+CC = x86_64-w64-mingw32-gcc
+CFLAGS = -I. -std=c11 -Wall -Wextra -O2 -ffreestanding -fshort-wchar -mno-red-zone -m64
+LDFLAGS = -nostdlib -Wl,--entry=efi_main -Wl,--subsystem=10 -Wl,--image-base=0x100000
 
-TARGET = BOOTX64.EFI
-SRC = main.c bootloader.c menu.c fs_utils.c
-OBJ = $(SRC:.c=.o)
+OBJS = main.o elf_loader.o menu.o boot_cfg.o windows_chainload.o
 
-EFIINC = /usr/include/efi
-EFILIB = /usr/lib/gnuefi
-
-CC = x86_64-linux-gnu-gcc
-LD = x86_64-linux-gnu-ld
-OBJCOPY = x86_64-linux-gnu-objcopy
-
-CFLAGS = -I$(EFIINC) -I$(EFIINC)/x86_64 \
-         -fPIC -fshort-wchar -mno-red-zone \
-         -Wall -O2 -fno-stack-protector \
-         -ffreestanding -nostdlib
-
-LDFLAGS = -nostdlib -znocombreloc -T $(EFILIB)/elf_x86_64_efi.lds
-
-all: $(TARGET)
+all: $(EFI_OUTPUT)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(TARGET): $(OBJ)
-	$(LD) $(LDFLAGS) -o boot.efi $(EFILIB)/crt0-efi-x86_64.o $(OBJ) -L$(EFILIB) -lefi -lgnuefi
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic \
-	           -j .dynsym -j .rel -j .rela -j .reloc \
-	           --target=efi-app-x86_64 boot.efi $(TARGET)
+$(EFI_OUTPUT): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
 
-run:
-	qemu-system-x86_64 -bios /usr/share/OVMF/OVMF.fd \
-	-drive format=raw,file=fat:rw:.
+iso: all
+	mkdir -p ../iso/EFI/BOOT
+	cp $(EFI_OUTPUT) ../iso/EFI/BOOT/BOOTX64.EFI
+	cp boot.cfg ../iso/
+	cp OtusOS.elf ../iso/
+	cp initrd.img ../iso/
+	cp vmlinuz ../iso/
+	cp initrd-debian.img ../iso/
+	grub-mkrescue -o ../iso/Otus.iso ../iso/
 
 clean:
-	rm -f *.o *.efi boot.efi
+	rm -f *.o $(EFI_OUTPUT)
