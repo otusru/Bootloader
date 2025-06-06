@@ -1,1 +1,19 @@
 // Меню выбора
+
+#include <efi.h>
+#include <efilib.h>
+#include "bootloader.h"
+
+// Функция для отображения меню выбора
+EFI_STATUS ShowMenu() {
+    Print(L"1. Загрузить Otus OS\n");
+    Print(L"2. Загрузить Linux\n");
+    Print(L"3. Выход\n");
+
+    EFI_INPUT_KEY key;
+    EFI_STATUS status;
+
+    while (TRUE) {
+        status = gST->ConIn->ReadKeyStroke(gST
+::contentReference[oaicite:0]{index=0}
+ 
