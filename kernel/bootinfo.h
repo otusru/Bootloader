@@ -9,4 +9,4 @@ typedef struct {
     uint64_t initrd_size;
 } BootInfo;
 
-#endif
+#endif // BOOTINFO_H
