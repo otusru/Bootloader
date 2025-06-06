@@ -60,6 +60,23 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     return EFI_SUCCESS;
 }
 
+INTN choice = boot_menu_auto_or_manual();
+BootEntry *entry = get_boot_entry(choice);
+
+if (entry->windows_chainload) {
+    return chainload_windows_bootmgr();
+}
+
+EFI_FILE *kernel_file = open_kernel_file(entry->kernel);
+void *entry_point = load_elf64(kernel_file);
+
+BootInfo *info = AllocatePool(sizeof(BootInfo));
+info->cmdline = entry->cmdline;
+info->initrd_addr = load_initrd(entry->initrd, &info->initrd_size);
+
+((KernelMainFunc)entry_point)(info);
+
+
 // ------------------------
 
 /*
