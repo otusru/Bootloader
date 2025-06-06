@@ -62,6 +62,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_tab
     UINTN kernel_count = 0;
     UINTN selection = 0;
 
+    Print(L"Загрузчик Otus OS (UEFI)\n");
+
+    // Читаем конфиг boot.cfg, парсим ядра
+    // Отображаем меню выбора ядра
+    // Загружаем выбранное ядро (ELF64)
+    // Загружаем initrd если есть
+    // Формируем BootInfo
+    // Передаем управление ядру (kernel_main или multiboot_main)
+
     // Инициализация библиотеки
     InitializeLib(image_handle, system_table);
 
